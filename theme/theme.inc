@@ -317,8 +317,38 @@ function islandora_solr_metadata_query_fields($object, &$solr_fields) {
           unset($solr_fields[$field['solr_field']]);
         }
       }
-
+      
       uasort($solr_fields, 'drupal_sort_weight');
+      $profiles = $object->getObjectProfile();
+      if($profiles['objModels'][1] == "info:fedora/islandora:bookCModel"){
+          module_load_include('inc', 'islandora_internet_archive_bookreader', 'theme/theme');
+          $primary_authors = array_map('trim', islandora_internet_archive_bookreader_info_primary_authors($object));
+          if(count($primary_authors) > 0){
+              $indexes = Array();              
+              $contributors = array_map('trim', $solr_fields['mods_name_personal_namePart_ms']['value']);
+              for($i = 0; $i < count($contributors); $i++){
+                  if(in_array($contributors[$i], $primary_authors)){
+                      array_push($indexes, $i);
+                      array_push($indexes, $i+1);
+                  }
+              }
+              $primary_authors = Array();
+              if(count($indexes) > 0){
+                  foreach($indexes as $index){
+                      array_push($primary_authors, $contributors[$index]);
+                      unset($contributors[$index]);
+                  }
+              }
+              $solr_fields['mods_name_personal_namePart_ms']['value'] = $contributors;
+              $solr_fields['primary_authors'] = $solr_fields['mods_name_personal_namePart_ms'];
+              $solr_fields['primary_authors']['display_label'] = 'Primary Authors';
+              $solr_fields['primary_authors']['value'] = $primary_authors;
+              $solr_fields['primary_authors']['data'] = str_replace('Contributors', 'Primary Authors', $solr_fields['mods_name_personal_namePart_ms']['data']);
+          }
+          
+//          print_r($primary_authors);
+//          print("<pre>");print_r($solr_fields);print("<pre>");;
+      }
       return TRUE;
     }
     else {
