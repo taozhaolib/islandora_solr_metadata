@@ -297,9 +297,11 @@ function islandora_solr_metadata_query_fields($object, &$solr_fields) {
         }
         unset($field);
       }
-
+      
+      $solr_fields_index = 0;
+      $contributorIndex = 0;
       // After values are omitted/dedupped filter down the displayed results.
-      foreach ($solr_fields as &$field) {
+      foreach ($solr_fields as $key => &$field) {
         // Check if the field is configured to filter based on whole field.
         if (($truncation = drupal_array_get_nested_value($field, array('truncation'))) && $truncation['max_length'] > 0 && isset($truncation['truncation_type']) && $truncation['truncation_type'] == 'whole_field_option') {
           // Keep the updated value stored in an array.
@@ -316,6 +318,10 @@ function islandora_solr_metadata_query_fields($object, &$solr_fields) {
           // Permissions are being enforced and none of our roles are allowed...
           unset($solr_fields[$field['solr_field']]);
         }
+        if($key == "mods_name_personal_namePart_ms"){
+            $contributorIndex = $solr_fields_index;
+        }
+        $solr_fields_index++;
       }
       
       uasort($solr_fields, 'drupal_sort_weight');
@@ -340,14 +346,13 @@ function islandora_solr_metadata_query_fields($object, &$solr_fields) {
                   }
               }
               $solr_fields['mods_name_personal_namePart_ms']['value'] = $contributors;
-              $solr_fields['primary_authors'] = $solr_fields['mods_name_personal_namePart_ms'];
+              $solr_fields = array_slice($solr_fields, 0 , $contributorIndex, true) + Array('primary_authors' => $solr_fields['mods_name_personal_namePart_ms'])
+                             + array_slice($solr_fields, $contributorIndex, count($solr_fields)-$contributorIndex, true);              
+//              $solr_fields['primary_authors'] = $solr_fields['mods_name_personal_namePart_ms'];
               $solr_fields['primary_authors']['display_label'] = 'Primary Authors';
               $solr_fields['primary_authors']['value'] = $primary_authors;
               $solr_fields['primary_authors']['data'] = str_replace('Contributors', 'Primary Authors', $solr_fields['mods_name_personal_namePart_ms']['data']);
           }
-          
-//          print_r($primary_authors);
-//          print("<pre>");print_r($solr_fields);print("<pre>");;
       }
       return TRUE;
     }
