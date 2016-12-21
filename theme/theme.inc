@@ -346,12 +346,16 @@ function islandora_solr_metadata_query_fields($object, &$solr_fields) {
                   }
               }
               $solr_fields['mods_name_personal_namePart_ms']['value'] = $contributors;
-              $solr_fields = array_slice($solr_fields, 0 , $contributorIndex, true) + Array('primary_authors' => $solr_fields['mods_name_personal_namePart_ms'])
-                             + array_slice($solr_fields, $contributorIndex, count($solr_fields)-$contributorIndex, true);              
-//              $solr_fields['primary_authors'] = $solr_fields['mods_name_personal_namePart_ms'];
-              $solr_fields['primary_authors']['display_label'] = 'Primary Authors';
-              $solr_fields['primary_authors']['value'] = $primary_authors;
-              $solr_fields['primary_authors']['data'] = str_replace('Contributors', 'Primary Authors', $solr_fields['mods_name_personal_namePart_ms']['data']);
+              if(count($primary_authors) > 0){
+                $solr_fields = array_slice($solr_fields, 0 , $contributorIndex, true) + Array('primary_authors' => $solr_fields['mods_name_personal_namePart_ms'])
+                               + array_slice($solr_fields, $contributorIndex, count($solr_fields)-$contributorIndex, true);              
+                $solr_fields['primary_authors']['display_label'] = 'Primary Authors';
+                $solr_fields['primary_authors']['value'] = $primary_authors;
+                $solr_fields['primary_authors']['data'] = str_replace('Contributors', 'Primary Authors', $solr_fields['mods_name_personal_namePart_ms']['data']);
+              }
+              if(count($contributors) == 0){
+                  unset($solr_fields['mods_name_personal_namePart_ms']);
+              }
           }
       }
       return TRUE;
